@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Archive Profile | Kinetic Archive</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary": "#a68cff",
+              "tertiary": "#ffe483",
+              "on-primary-fixed-variant": "#5f001b",
+              "secondary-fixed": "#d8caff",
+              "on-primary": "#64001c",
+              "surface-container-lowest": "#000000",
+              "surface-container-high": "#3d0d26",
+              "surface-container-highest": "#46122c",
+              "on-surface": "#ffdde8",
+              "on-primary-fixed": "#000000",
+              "surface-tint": "#ff8c98",
+              "primary-dim": "#e5124e",
+              "inverse-on-surface": "#76465b",
+              "error-container": "#9f0519",
+              "error": "#ff716c",
+              "primary-container": "#ff7386",
+              "background": "#220213",
+              "tertiary-fixed-dim": "#edc600",
+              "secondary-dim": "#7e51ff",
+              "on-surface-variant": "#d59ab1",
+              "on-background": "#ffdde8",
+              "surface-dim": "#220213",
+              "on-error-container": "#ffa8a3",
+              "surface-container-low": "#2a0418",
+              "on-tertiary": "#635200",
+              "on-tertiary-fixed": "#433700",
+              "primary-fixed": "#ff7386",
+              "tertiary-dim": "#edc600",
+              "surface-container": "#34081f",
+              "on-secondary-fixed": "#3b00a0",
+              "surface-variant": "#46122c",
+              "tertiary-container": "#fdd400",
+              "primary": "#ff8c98",
+              "error-dim": "#d7383b",
+              "on-secondary": "#25006b",
+              "surface": "#220213",
+              "primary-fixed-dim": "#ff5772",
+              "outline": "#9b667b",
+              "on-tertiary-container": "#594a00",
+              "surface-bright": "#4f1733",
+              "tertiary-fixed": "#fdd400",
+              "secondary-container": "#591adc",
+              "on-error": "#490006",
+              "secondary-fixed-dim": "#cabaff",
+              "inverse-surface": "#fff8f8",
+              "on-secondary-fixed-variant": "#591bdc",
+              "on-primary-container": "#4e0014",
+              "on-tertiary-fixed-variant": "#645300",
+              "inverse-primary": "#bf003e",
+              "outline-variant": "#673a4d",
+              "on-secondary-container": "#e4daff"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .kinetic-gradient {
+            background: linear-gradient(135deg, #e5124e 0%, #ff7386 100%);
+        }
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="bg-[#220213] dark:bg-[#220213] docked full-width top-0 z-40 sticky shadow-[0_40px_40px_rgba(229,18,78,0.08)]">
+<div class="flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#ff8c98] dark:text-[#ff8c98] text-2xl hover:scale-105 transition-transform duration-200">account_circle</span>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-[#d59ab1] text-lg">Archive Profile</h1>
+</div>
+<div class="text-2xl font-black text-[#ff8c98] italic font-headline">KINETIC</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#ff8c98] dark:text-[#ff8c98] text-2xl hover:scale-105 transition-transform duration-200">settings</span>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 pt-8 pb-32">
+<!-- User Profile Header (Hero Section) -->
+<section class="relative mb-12">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+<!-- Avatar & Visual Anchor -->
+<div class="lg:col-span-4 relative group">
+<div class="absolute -top-4 -left-4 w-24 h-24 bg-secondary/20 rounded-full blur-3xl"></div>
+<div class="aspect-square w-full max-w-[320px] rounded-lg overflow-hidden border-4 border-surface-container-highest shadow-2xl relative z-10">
+<img alt="Profile Picture" class="w-full h-full object-cover" data-alt="Stylized anime character portrait with vibrant neon lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPF9P4-ssVYXgGEAxfDXr-KOTUj8VNVcCYOQpBaZ3WAdhLS5TfjfRzhWz-sHGhxDQkpOWCHBLIxjiZ9plsLH4FgAB-EedGfb3F5o1yveq_ia-V7XZr5G5f2pp2mmnRRuFzIu6gPljrmGJb-qj42PAgZwOjY8mIhgYWMrAFhKUH-n8WiVfwUO3DABZsoMx6tfCWl4FM31NX5qbP6LFNkdwUTkb7Wd0pFFLmuO9y3BcpQKtTcfEEoUhF8uZZkyvzAkg1kJOOVU7Or5k"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
+</div>
+</div>
+<!-- Bio & Identity -->
+<div class="lg:col-span-8 mb-4">
+<div class="flex items-center gap-4 mb-2">
+<span class="px-3 py-1 bg-secondary text-on-secondary text-[10px] font-bold font-label tracking-widest uppercase rounded-sm">VETERAN ARCHIVIST</span>
+<span class="text-tertiary flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label font-bold text-xs uppercase">Elite Tier</span>
+</span>
+</div>
+<h2 class="text-7xl font-headline font-extrabold tracking-tighter text-on-surface mb-4">
+                        OtakuMaster
+                    </h2>
+<p class="text-xl text-on-surface-variant font-medium leading-relaxed max-w-2xl border-l-4 border-primary pl-6">
+                        Curating the finest sequences from the 90s golden age to modern MAPPA masterpieces. Exploring the kinetic energy of Shonen and the atmospheric depth of Seinen.
+                    </p>
+<div class="mt-8 flex gap-4">
+<button class="kinetic-gradient px-8 py-4 rounded-full font-headline font-bold text-on-primary-fixed shadow-lg shadow-primary-dim/20 hover:scale-105 transition-all active:scale-95">
+                            Edit Timeline
+                        </button>
+<button class="bg-surface-container-high px-8 py-4 rounded-full font-headline font-bold text-on-surface hover:bg-surface-bright transition-all">
+                            Export List
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid: Stats & Genres -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Statistics Section -->
+<div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
+<!-- Days Stat -->
+<div class="bg-surface-container p-8 rounded-lg relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-9xl">schedule</span>
+</div>
+<p class="font-label text-xs font-bold uppercase tracking-[0.2em] text-outline mb-4">Total Days</p>
+<h3 class="text-5xl font-headline font-black text-primary">25.4</h3>
+<div class="mt-4 h-1 w-12 bg-primary"></div>
+</div>
+<!-- Hours Stat -->
+<div class="bg-surface-container p-8 rounded-lg relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-9xl">play_circle</span>
+</div>
+<p class="font-label text-xs font-bold uppercase tracking-[0.2em] text-outline mb-4">Total Hours</p>
+<h3 class="text-5xl font-headline font-black text-secondary">609.6</h3>
+<div class="mt-4 h-1 w-12 bg-secondary"></div>
+</div>
+<!-- Score Stat -->
+<div class="bg-surface-container p-8 rounded-lg relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-9xl">grade</span>
+</div>
+<p class="font-label text-xs font-bold uppercase tracking-[0.2em] text-outline mb-4">Avg Score</p>
+<h3 class="text-5xl font-headline font-black text-tertiary">7.5</h3>
+<div class="mt-4 h-1 w-12 bg-tertiary"></div>
+</div>
+<!-- Watching Habits Visual Chart Placeholder -->
+<div class="sm:col-span-3 bg-surface-container-high p-8 rounded-lg flex flex-col justify-between min-h-[300px]">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h4 class="text-2xl font-headline font-bold mb-1">Watching Habits</h4>
+<p class="text-on-surface-variant text-sm">Activity peaks during weekend late-nights.</p>
+</div>
+<div class="flex gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="w-3 h-3 rounded-full bg-tertiary"></span>
+</div>
+</div>
+<div class="flex items-end justify-between h-32 gap-2">
+<div class="flex-1 bg-surface-variant rounded-t-sm h-[30%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-variant rounded-t-sm h-[45%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-variant rounded-t-sm h-[60%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[90%]"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[100%]"></div>
+<div class="flex-1 bg-surface-variant rounded-t-sm h-[70%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-variant rounded-t-sm h-[40%] hover:bg-primary transition-colors"></div>
+</div>
+<div class="flex justify-between mt-4 font-label text-[10px] text-outline tracking-widest uppercase">
+<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+</div>
+</div>
+</div>
+<!-- Genre Breakdown -->
+<div class="md:col-span-4 bg-surface-container p-8 rounded-lg flex flex-col">
+<h4 class="text-2xl font-headline font-bold mb-6">Genre DNA</h4>
+<div class="space-y-6">
+<!-- Genre Item -->
+<div class="group">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label font-bold text-xs uppercase tracking-wider text-on-surface">Action</span>
+<span class="text-xs text-on-surface-variant font-medium">42%</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full kinetic-gradient w-[42%]"></div>
+</div>
+</div>
+<!-- Genre Item -->
+<div class="group">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label font-bold text-xs uppercase tracking-wider text-on-surface">Seinen</span>
+<span class="text-xs text-on-surface-variant font-medium">28%</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[28%]"></div>
+</div>
+</div>
+<!-- Genre Item -->
+<div class="group">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label font-bold text-xs uppercase tracking-wider text-on-surface">Isekai</span>
+<span class="text-xs text-on-surface-variant font-medium">15%</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[15%]"></div>
+</div>
+</div>
+<!-- Genre Item -->
+<div class="group">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label font-bold text-xs uppercase tracking-wider text-on-surface">Romance</span>
+<span class="text-xs text-on-surface-variant font-medium">10%</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-outline w-[10%]"></div>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-8">
+<p class="font-label text-[10px] uppercase font-bold text-outline tracking-widest mb-4">Core Tags</p>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-bright px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase text-secondary">Cyberpunk</span>
+<span class="bg-surface-bright px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase text-secondary">Mecha</span>
+<span class="bg-surface-bright px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase text-secondary">Slice of Life</span>
+<span class="bg-surface-bright px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase text-secondary">Psychological</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-[#000000]/80 backdrop-blur-xl fixed bottom-0 w-full rounded-t-[3rem] z-50 shadow-2xl">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-[#d59ab1] p-3 hover:text-[#a68cff] transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-[0.05em] font-medium">Home</span>
+</a>
+<!-- Search -->
+<a class="flex flex-col items-center justify-center text-[#d59ab1] p-3 hover:text-[#a68cff] transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">search</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-[0.05em] font-medium">Search</span>
+</a>
+<!-- My List -->
+<a class="flex flex-col items-center justify-center text-[#d59ab1] p-3 hover:text-[#a68cff] transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">bookmarks</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-[0.05em] font-medium">My List</span>
+</a>
+<!-- Profile (Active) -->
+<a class="flex flex-col items-center justify-center bg-[#ff8c98] text-[#220213] rounded-full p-3 scale-105 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-[0.05em] font-medium">Profile</span>
+</a>
+</nav>
+</body></html>

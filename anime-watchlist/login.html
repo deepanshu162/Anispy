@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ANISPY | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="authContainer" class="auth-overlay" style="display: flex;">
+        <!-- Live Wallpaper Video Background -->
+        <video class="auth-video-bg" autoplay loop muted playsinline>
+            <source src="bg.mp4" type="video/mp4">
+        </video>
+        <div class="auth-video-overlay"></div>
+        <div class="auth-card-split">
+            <!-- Left Side: Image -->
+            <div class="auth-hero">
+                <img src="https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600&auto=format&fit=crop" alt="Anime Hero" class="auth-hero-img">
+                <div class="auth-hero-overlay">
+                    <h2>Track your journey.</h2>
+                    <p>Join thousands of fans around the world in cataloging their favorite anime.</p>
+                </div>
+            </div>
+            
+            <!-- Right Side: Form -->
+            <div class="auth-content">
+                <h2 class="auth-title">ANISPY</h2>
+                
+                <div class="auth-tabs">
+                    <button type="button" class="auth-tab active" id="tabLogin">Login</button>
+                    <button type="button" class="auth-tab" id="tabSignup">Register</button>
+                </div>
+
+                <div id="authError" class="auth-error hidden"></div>
+                
+                <form id="authForm" class="auth-form" onsubmit="return false;">
+                    <div class="input-group">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="authEmail" class="auth-input-icon" placeholder="Email address" required autocomplete="username">
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="authPassword" class="auth-input-icon" placeholder="Password" required autocomplete="current-password">
+                        <i class="fa-solid fa-eye-slash password-toggle" id="togglePasswordBtn"></i>
+                    </div>
+
+                    <button type="submit" id="authSubmitBtn" class="btn-block-primary">
+                        <span id="authBtnText">Login</span>
+                        <i class="fa-solid fa-circle-notch fa-spin hidden" id="authSpinner" style="margin-left: 0.5rem;"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+</body>
+</html>
