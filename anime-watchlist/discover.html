@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ANISPY | Discover</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .grid-card {
+            position: relative;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            aspect-ratio: 2/3;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .grid-card:hover {
+            transform: translateY(-5px);
+            z-index: 10;
+        }
+        .grid-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .grid-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem 0.75rem 0.75rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
+        }
+        .grid-score {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #10B981;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .grid-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 1rem;
+            color: var(--text-secondary);
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="home-body">
+    <!-- Top Navigation -->
+    <header class="top-nav">
+        <button class="icon-btn"><i class="fa-solid fa-bars"></i></button>
+        <div class="logo">ANISPY</div>
+        <div class="top-nav-right">
+            <button class="icon-btn" id="topSearchBtn"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <div class="profile-pic">
+                <i class="fa-solid fa-user" style="color: #aaa; font-size: 0.8rem;"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="home-content" style="padding-top: 1.5rem; padding-bottom: 8rem;">
+        <div style="padding: 0 1rem; margin-bottom: 1.5rem;">
+            <h2 class="section-title italic-title" style="font-size: 1.75rem;">DISCOVER</h2>
+            <p style="color: #a0a0a0; font-size: 0.95rem;">Tailored recommendations based on the anime in your watchlist.</p>
+        </div>
+        
+        <div id="loadingOverlay" style="text-align: center; padding: 4rem 0;">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: #f31220; margin-bottom: 1rem;"></i>
+            <div style="color: #a0a0a0;">Curating personalized suggestions...</div>
+        </div>
+
+        <!-- Dynamic Rows Container -->
+        <div id="discoverRowsContainer" style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <!-- JS will inject <section class="home-section"> elements here -->
+        </div>
+        
+        <!-- Empty State Container -->
+        <div id="discoverEmptyState" class="empty-state" style="display: none;"></div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="home.html" class="nav-item">
+            <i class="fa-solid fa-house"></i>
+            <span>HOME</span>
+        </a>
+        <a href="discover.html" class="nav-item active">
+            <i class="fa-solid fa-compass"></i>
+            <span>DISCOVER</span>
+        </a>
+
+        <a href="index.html" class="nav-item">
+            <i class="fa-solid fa-bookmark"></i>
+            <span>WATCHLIST</span>
+        </a>
+        <a href="profile.html" class="nav-item" id="navProfileBtn">
+            <i class="fa-solid fa-user"></i>
+            <span id="navProfileText">PROFILE</span>
+        </a>
+    </nav>
+
+    <!-- Global Search Overlay -->
+    <div class="search-overlay hidden" id="searchOverlay">
+        <div class="search-overlay-header">
+            <div class="search-input-wrapper" style="width:100%; position:relative;">
+                <i class="fa-solid fa-magnifying-glass search-icon" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:#757575;"></i>
+                <input type="text" id="globalSearchInput" class="filter-input" style="width:100%; padding-left:2.5rem;" placeholder="Search API for anime...">
+            </div>
+            <button class="close-search" id="closeSearchBtn" style="margin-left:1rem; background:none; border:none; color:#a0a0a0; font-weight:600; cursor:pointer;">Cancel</button>
+        </div>
+        <div id="searchResults" class="search-results" style="flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.5rem;"></div>
+    </div>
+    
+    <!-- Anime Details Overlay -->
+    <div id="animeModal" class="details-overlay hidden">
+        <div class="details-content">
+            <button class="close-details" id="closeDetailsBtn"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="details-hero">
+            <img id="modalImage" src="" alt="Anime Cover" class="details-hero-img">
+            <div class="details-hero-gradient"></div>
+            <div class="details-hero-content">
+                <div class="details-tags">
+                    <span class="tag-primary" id="modalTagTop">TRENDING #1</span>
+                    <span class="tag-secondary" id="modalTagType">TV SERIES</span>
+                </div>
+                <h1 class="details-title" id="modalTitle"></h1>
+                <div class="details-stats">
+                    <span class="stat-item"><i class="fa-solid fa-star" style="color: #fca5a5;"></i> <span id="modalScore"></span> Rating</span>
+                    <span class="stat-item"><i class="fa-solid fa-layer-group" style="color: #6ee7b7;"></i> <span id="modalEpisodes"></span> Episodes</span>
+                    <span class="stat-item"><i class="fa-solid fa-clock" style="color: #fcd34d;"></i> <span id="modalDuration"></span></span>
+                </div>
+                <div class="details-genres" id="modalGenres">
+                    <!-- Genre pills injected here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="details-body">
+            <h2 class="section-title">Synopsis</h2>
+            <p class="details-synopsis" id="modalSynopsis"></p>
+
+            <div class="section-header">
+                <h2 class="section-title">Main Characters</h2>
+                <button class="view-all-btn">VIEW ALL <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+            <div class="characters-scroll" id="modalCharacters">
+                <!-- Character cards injected here -->
+            </div>
+
+            <div class="control-box">
+                <button type="button" id="saveToListBtn" class="btn-block-primary"><i class="fa-solid fa-bookmark"></i> Add to Watchlist</button>
+                
+                <div class="control-group">
+                    <label class="control-label">UPDATE STATUS</label>
+                    <div class="custom-select-wrapper">
+                        <select id="statusSelect" class="status-select">
+                            <option value="plan_to_watch">Plan to Watch</option>
+                            <option value="completed">Completed</option>
+                            <option value="dropped">Dropped</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+
+                <div class="control-group" id="ratingGroup">
+                    <label class="control-label">YOUR RATING</label>
+                    <div class="rating-input-row">
+                        <div class="custom-select-wrapper">
+                            <select id="userRatingSelect" class="status-select">
+                                <option value="">Select Rating</option>
+                                <option value="10">(10) Masterpiece</option>
+                                <option value="9">(9) Great</option>
+                                <option value="8">(8) Very Good</option>
+                                <option value="7">(7) Good</option>
+                                <option value="6">(6) Fine</option>
+                                <option value="5">(5) Average</option>
+                                <option value="4">(4) Bad</option>
+                                <option value="3">(3) Very Bad</option>
+                                <option value="2">(2) Horrible</option>
+                                <option value="1">(1) Appalling</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-icon"></i>
+                        </div>
+                        <i class="fa-solid fa-star rating-star-icon"></i>
+                    </div>
+                </div>
+
+                <div class="control-group flex-between hidden" id="episodesInputWrapper">
+                    <label class="control-label">Episodes Watched:</label>
+                    <div class="ep-input-group">
+                        <input type="number" id="episodesWatched" class="ep-input-small" min="0" value="0">
+                        <span class="ep-total">/ <span id="totalEpsSpan">?</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modalSeasonsContainer" class="hidden">
+                <div class="section-header">
+                    <h2 class="section-title">Seasons</h2>
+                </div>
+                <div class="seasons-scroll" id="modalSeasons" style="display:flex; flex-direction:column; gap:0.5rem; padding-bottom:1rem; margin-bottom:1rem;">
+                    <!-- Season pills injected here -->
+                </div>
+            </div>
+
+            <h2 class="section-title">Information</h2>
+            <div class="info-grid">
+                <div class="info-row"><span class="info-label">STUDIO</span> <span class="info-value" id="modalStudio"></span></div>
+                <div class="info-row"><span class="info-label">AIRED</span> <span class="info-value" id="modalAired"></span></div>
+                <div class="info-row"><span class="info-label">PRODUCERS</span> <span class="info-value" id="modalProducers"></span></div>
+                <div class="info-row"><span class="info-label">THEME</span> <span class="info-value" id="modalTheme"></span></div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="discover.js"></script>
+</body>
+</html>

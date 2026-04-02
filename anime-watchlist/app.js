@@ -198,7 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         apiSearchTimeout = setTimeout(async () => {
             try {
-                const response = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=15`);
+                // Backend handles Jikan call + grouping logic
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=15`);
                 const data = await response.json();
                 renderApiResults(data.data);
             } catch (error) {
@@ -209,6 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 600);
     }
 
+    // isRelatedTitle kept here for local watchlist grouping (groupWatchlist uses it — no API call involved)
+    // groupApiResults and getSeasonLabel moved to backend/main.py
     function isRelatedTitle(base, ext) {
         if (!base || !ext) return false;
         const lBase = base.toLowerCase();
@@ -218,72 +221,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lExt.startsWith(lBase + ' ') || lExt.startsWith(lBase + ':') || lExt.startsWith(lBase + '-')) return true;
         if (lBase.startsWith(lExt + ' ') || lBase.startsWith(lExt + ':') || lBase.startsWith(lExt + '-')) return true;
         
+        // Stripped prefix check: handles special chars (e.g. "Yu☆Gi☆Oh!" vs "Yu-Gi-Oh!")
+        // Using startsWith (not includes) to avoid short words matching inside unrelated longer titles
         const strippedBase = lBase.replace(/[^a-z0-9]/g, '');
         const strippedExt = lExt.replace(/[^a-z0-9]/g, '');
         
-        if (strippedBase.length >= 4 && strippedExt.includes(strippedBase)) return true;
-        if (strippedExt.length >= 4 && strippedBase.includes(strippedExt)) return true;
+        if (strippedBase.length >= 4 && strippedExt.startsWith(strippedBase)) return true;
+        if (strippedExt.length >= 4 && strippedBase.startsWith(strippedExt)) return true;
         
         return false;
-    }
-
-    function groupApiResults(results) {
-        const groups = [];
-        results.forEach(anime => {
-            const currTitleEng = anime.title_english || anime.title;
-            const currTitleRom = anime.title;
-
-            let matched = false;
-            for (let g of groups) {
-                const gTitleEng = g.mainAnime.title_english || g.mainAnime.title;
-                const gTitleRom = g.mainAnime.title;
-                
-                if (isRelatedTitle(gTitleEng, currTitleEng) || isRelatedTitle(gTitleRom, currTitleRom)) {
-                    g.seasons.push(anime);
-                    matched = true;
-                    break;
-                }
-                
-                if (isRelatedTitle(currTitleEng, gTitleEng) || isRelatedTitle(currTitleRom, gTitleRom)) {
-                    g.seasons.push(anime);
-                    g.mainAnime = anime; // Current is the base
-                    matched = true;
-                    break;
-                }
-            }
-            if (!matched) {
-                groups.push({
-                    mainAnime: anime,
-                    seasons: [anime]
-                });
-            }
-        });
-
-        groups.forEach(g => {
-            g.seasons.sort((a,b) => {
-                const dateA = a.aired?.from ? new Date(a.aired.from) : new Date('2099');
-                const dateB = b.aired?.from ? new Date(b.aired.from) : new Date('2099');
-                return dateA - dateB;
-            });
-            g.mainAnime = g.seasons[0]; // Set earliest as main
-        });
-
-        return groups;
-    }
-
-    function getSeasonLabel(mainAnime, seasonAnime) {
-        const mainTitle = mainAnime.title_english || mainAnime.title;
-        const currentTitle = seasonAnime.title_english || seasonAnime.title;
-        
-        if (mainTitle.toLowerCase() === currentTitle.toLowerCase()) return "Season 1";
-        
-        let label = currentTitle;
-        if (currentTitle.toLowerCase().startsWith(mainTitle.toLowerCase())) {
-            label = currentTitle.substring(mainTitle.length).replace(/^[:\-\s]+/, '').trim();
-        } else if (seasonAnime.title.toLowerCase().startsWith(mainAnime.title.toLowerCase())) {
-            label = seasonAnime.title.substring(mainAnime.title.length).replace(/^[:\-\s]+/, '').trim();
-        }
-        return label || "Season 1";
     }
 
     function groupWatchlist(list) {
@@ -319,18 +265,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return groups;
     }
 
-    function renderApiResults(results) {
+    function renderApiResults(groups) {
         searchResults.innerHTML = '';
         
-        if (!results || results.length === 0) {
+        if (!groups || groups.length === 0) {
             searchResults.innerHTML = '<div style="color:var(--text-secondary); text-align:center; padding: 2rem;">No results found</div>';
             return;
         }
 
-        const grouped = groupApiResults(results);
-
-        grouped.forEach(g => {
-            const anime = g.mainAnime;
+        // groups already pre-processed by backend: [{ main, seasons: [{label, ...}] }]
+        groups.forEach(g => {
+            const anime = g.main;
             const el = document.createElement('div');
             el.className = 'api-result-item';
             
@@ -338,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const year = anime.year || 'N/A';
             
             let html = `
-                <img src="${anime.images.jpg.image_url}" alt="${title}" class="api-result-img" style="cursor:pointer">
+                <img src="${anime.image}" alt="${title}" class="api-result-img" style="cursor:pointer">
                 <div class="api-result-info">
                     <div class="api-result-title" style="cursor:pointer">${title}</div>
                     <div class="api-result-meta">${anime.type || 'TV'} • ${year} • ★ ${anime.score || 'N/A'}</div>
@@ -349,8 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += `<div class="api-result-seasons" style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">`;
                 html += `<div style="font-size:0.75rem; color:var(--text-secondary); width:100%; margin-bottom: 0.25rem;">Seasons:</div>`;
                 g.seasons.forEach((season) => {
-                    const label = getSeasonLabel(g.mainAnime, season);
-                    html += `<span class="season-pill" data-id="${season.mal_id}">${label}</span>`;
+                    html += `<span class="season-pill" data-id="${season.mal_id}">${season.label}</span>`;
                 });
                 html += `</div>`;
             }
@@ -387,7 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentAnime = {
             id: anime.mal_id,
             title: anime.title_english || anime.title,
-            image: anime.images.jpg.large_image_url || anime.images.jpg.image_url,
+            // Backend returns image/large_image; fall back gracefully
+            image: anime.large_image || anime.image,
             score: anime.score || 'N/A',
             episodes: anime.episodes,
             status_api: anime.status,
@@ -397,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
             duration: anime.duration,
             genres: anime.genres,
             studios: anime.studios,
-            aired: anime.aired?.string,
+            aired: anime.aired,
             producers: anime.producers,
             themes: anime.themes
         };
@@ -521,19 +466,18 @@ document.addEventListener('DOMContentLoaded', () => {
             seasonsContainer.classList.add('hidden');
             seasonsList.innerHTML = '<span style="color:#aaa; font-size:0.8rem;">Loading seasons...</span>';
             
-            const searchTitle = currentAnime.title_english || currentAnime.title;
-            fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(searchTitle)}&limit=15`)
+            // Backend handles Jikan call + grouping — returns only seasons for this anime
+            fetch(`/api/anime/${currentAnime.id}/seasons`)
                 .then(res => res.json())
                 .then(data => {
                     if (!currentAnime) return;
-                    const grouped = groupApiResults(data.data);
-                    let targetGroup = grouped.find(g => g.seasons.some(s => s.mal_id === currentAnime.id));
+                    const seasons = data.data;
                     
-                    if (targetGroup && targetGroup.seasons.length > 1) {
+                    if (seasons && seasons.length > 1) {
                         seasonsContainer.classList.remove('hidden');
                         seasonsList.innerHTML = '';
-                        targetGroup.seasons.forEach(season => {
-                            const label = getSeasonLabel(targetGroup.mainAnime, season);
+                        seasons.forEach(season => {
+                            const label = season.label;
                             const existingEntry = watchlist.find(item => item.id === season.mal_id);
                             const isWatched = existingEntry && existingEntry.status === 'completed';
                             
@@ -575,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         user_id: currentUser.id,
                                         anime_id: season.mal_id,
                                         title: season.title_english || season.title,
-                                        image: season.images?.jpg?.large_image_url || season.images?.jpg?.image_url,
+                                        image: season.large_image || season.image,
                                         score: season.score || 'N/A',
                                         episodes: season.episodes,
                                         status_api: season.status,
@@ -608,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                             studios: season.studios || [],
                                             producers: season.producers || [],
                                             themes: season.themes || [],
-                                            aired: season.aired?.string || ''
+                                            aired: season.aired || ''
                                         };
                                         watchlist = watchlist.filter(i => i.id !== season.mal_id);
                                         watchlist.unshift(frontendObj);

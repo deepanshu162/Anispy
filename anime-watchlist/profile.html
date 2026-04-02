@@ -221,10 +221,15 @@
 <body>
     <!-- Top Navigation matches index.html -->
     <header class="top-nav">
-        <button class="icon-btn" onclick="window.location.href='index.html'"><i class="fa-solid fa-arrow-left"></i></button>
+        <button class="icon-btn" onclick="window.location.href='index.html'"><i class="fa-solid fa-bars"></i></button>
         <div class="logo">ANISPY</div>
         <div class="top-nav-right" style="position: relative;">
-            <button class="icon-btn" id="topGearBtn"><i class="fa-solid fa-gear"></i></button>
+            <button class="icon-btn" id="topSearchBtn" onclick="window.location.href='discover.html'"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <button class="icon-btn" id="topGearBtn" style="padding: 0; margin-left: 0.5rem;">
+                <div class="profile-pic" style="pointer-events: none;">
+                    <i class="fa-solid fa-user" style="color: #aaa; font-size: 0.8rem;"></i>
+                </div>
+            </button>
             <div id="gearDropdown" class="hidden" style="position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; min-width: 150px; z-index: 50; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);">
                 <button id="dropdownEditProfileBtn" style="width: 100%; text-align: left; padding: 0.6rem; background: transparent; border: none; color: var(--text-primary); cursor: pointer; border-radius: 0.25rem; font-size: 0.85rem; font-family: var(--font-main); font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
                     <i class="fa-solid fa-user-pen" style="width: 25px; text-align: center;"></i> Edit Profile
@@ -349,14 +354,15 @@
 
     <!-- Bottom Navigation Matches index.html exactly -->
     <nav class="bottom-nav">
-        <a href="index.html" class="nav-item">
+        <a href="home.html" class="nav-item">
             <i class="fa-solid fa-house"></i>
             <span>HOME</span>
         </a>
-        <a href="#" class="nav-item" onclick="document.querySelector('#navSearchBtn')?.click(); return false;">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>SEARCH</span>
+        <a href="discover.html" class="nav-item">
+            <i class="fa-solid fa-compass"></i>
+            <span>DISCOVER</span>
         </a>
+
         <a href="index.html" class="nav-item">
             <i class="fa-solid fa-bookmark"></i>
             <span>WATCHLIST</span>
