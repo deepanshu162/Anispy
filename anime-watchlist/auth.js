@@ -8,76 +8,77 @@ document.addEventListener('DOMContentLoaded', () => {
     let isLoginMode = true;
 
     // DOM Elements
-    const authEmail = document.getElementById('authEmail');
-    const authPassword = document.getElementById('authPassword');
-    const authError = document.getElementById('authError');
-    const tabLogin = document.getElementById('tabLogin');
-    const tabSignup = document.getElementById('tabSignup');
+    const authEmail     = document.getElementById('authEmail');
+    const authPassword  = document.getElementById('authPassword');
+    const authError     = document.getElementById('authError');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
-    const authBtnText = document.getElementById('authBtnText');
-    const authSpinner = document.getElementById('authSpinner');
-    const authForm = document.getElementById('authForm');
-    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+    const authBtnText   = document.getElementById('authBtnText');
+    const authSpinner   = document.getElementById('authSpinner');
+    const authForm      = document.getElementById('authForm');
     const toastContainer = document.getElementById('toastContainer');
+    const cardTitle     = document.getElementById('cardTitle');
+    const cardSubtitle  = document.getElementById('cardSubtitle');
+    const switchModeBtn = document.getElementById('switchModeBtn');
+    const switchPrompt  = document.getElementById('switchPrompt');
+    const forgotLink    = document.getElementById('forgotLink');
 
     function showToast(message) {
         const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.innerHTML = `<i class="fa-solid fa-check" style="color:var(--accent-red)"></i> <span>${message}</span>`;
+        toast.style.cssText = 'background:#1f1f1f; border:1px solid #2a2a2a; border-radius:8px; padding:0.75rem 1rem; color:#fff; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem;';
+        toast.innerHTML = `<i class="fa-solid fa-check" style="color:#a855f7"></i> <span>${message}</span>`;
         toastContainer.appendChild(toast);
         setTimeout(() => {
-            toast.classList.add('hiding');
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s';
             setTimeout(() => toast.remove(), 300);
         }, 2000);
     }
 
-    // Checking if already logged in -> redirect to index.html
+    // Redirect if already logged in
     async function checkAuth() {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            window.location.href = 'index.html';
-        }
+        if (session) window.location.href = 'index.html';
     }
     checkAuth();
 
-    // Listen to auth state changes to auto-redirect
     supabase.auth.onAuthStateChange((event, session) => {
-        if (session) {
-            window.location.href = 'index.html';
+        if (session) window.location.href = 'index.html';
+    });
+
+    // Switch between Login / Register
+    function attachSwitchListener() {
+        const btn = document.getElementById('switchModeBtn');
+        if (btn) btn.addEventListener('click', toggleMode);
+    }
+
+    function toggleMode() {
+        isLoginMode = !isLoginMode;
+        if (isLoginMode) {
+            cardTitle.textContent    = 'Welcome Back';
+            cardSubtitle.textContent = 'Continue your cinematic archiving odyssey.';
+            authBtnText.textContent  = 'Sign In';
+            if (forgotLink) forgotLink.style.display = '';
+            switchPrompt.innerHTML = 'Don\'t have an account? <a id="switchModeBtn">Start archiving for free.</a>';
+        } else {
+            cardTitle.textContent    = 'Create Account';
+            cardSubtitle.textContent = 'Start your anime archiving journey today.';
+            authBtnText.textContent  = 'Register';
+            if (forgotLink) forgotLink.style.display = 'none';
+            switchPrompt.innerHTML = 'Already have an account? <a id="switchModeBtn">Sign in here.</a>';
         }
-    });
+        authError.className = 'hidden';
+        attachSwitchListener();
+    }
 
-    // Auth Tabs
-    tabLogin.addEventListener('click', () => {
-        isLoginMode = true;
-        tabLogin.classList.add('active');
-        tabSignup.classList.remove('active');
-        authBtnText.textContent = 'Login';
-        authError.classList.add('hidden');
-    });
+    attachSwitchListener();
 
-    tabSignup.addEventListener('click', () => {
-        isLoginMode = false;
-        tabSignup.classList.add('active');
-        tabLogin.classList.remove('active');
-        authBtnText.textContent = 'Sign Up';
-        authError.classList.add('hidden');
-    });
-
-    // Toggle Password Visibility
-    togglePasswordBtn.addEventListener('click', () => {
-        const type = authPassword.getAttribute('type') === 'password' ? 'text' : 'password';
-        authPassword.setAttribute('type', type);
-        togglePasswordBtn.classList.toggle('fa-eye');
-        togglePasswordBtn.classList.toggle('fa-eye-slash');
-    });
-
-    // Unified Form Submit (Login & Signup)
+    // Form Submit
     authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        authError.classList.add('hidden');
-        
-        authBtnText.textContent = isLoginMode ? 'Logging in...' : 'Signing up...';
+        authError.className = 'hidden';
+
+        const loadingText = isLoginMode ? 'Signing in...' : 'Creating account...';
+        authBtnText.textContent = loadingText;
         authSpinner.classList.remove('hidden');
         authSubmitBtn.disabled = true;
 
@@ -93,21 +94,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 password: authPassword.value
             });
         }
-        
-        authBtnText.textContent = isLoginMode ? 'Login' : 'Sign Up';
+
+        authBtnText.textContent = isLoginMode ? 'Sign In' : 'Register';
         authSpinner.classList.add('hidden');
+        authSubmitBtn.disabled = false;
 
         if (response.error) {
             showAuthError(response.error.message);
-            authSubmitBtn.disabled = false;
         } else if (!isLoginMode) {
-            showToast('Signup successful! Auto-logging in...');
-            // onAuthStateChange will redirect
+            showToast('Account created! Signing you in...');
         }
     });
 
     function showAuthError(msg) {
         authError.textContent = msg;
-        authError.classList.remove('hidden');
+        authError.className = '';  // remove 'hidden'
+    }
+
+    // Social buttons (placeholder — wire up OAuth here if needed)
+    const googleBtn = document.getElementById('googleBtn');
+    const githubBtn = document.getElementById('githubBtn');
+
+    if (googleBtn) {
+        googleBtn.addEventListener('click', async () => {
+            await supabase.auth.signInWithOAuth({ provider: 'google' });
+        });
+    }
+    if (githubBtn) {
+        githubBtn.addEventListener('click', async () => {
+            await supabase.auth.signInWithOAuth({ provider: 'github' });
+        });
     }
 });

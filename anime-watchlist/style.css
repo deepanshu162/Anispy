@@ -52,7 +52,6 @@ button { font-family: var(--font-main); }
 /* Top Navigation */
 .top-nav {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1rem;
     width: 100%;
@@ -60,6 +59,10 @@ button { font-family: var(--font-main); }
     position: sticky;
     top: 0;
     z-index: 100;
+}
+
+.nav-spacer {
+    flex: 1;
 }
 
 .icon-btn {
@@ -83,12 +86,16 @@ button { font-family: var(--font-main); }
         0 0 20px #f31220,
         0 0 30px #f31220,
         0 4px 10px rgba(0,0,0,0.8);
+    flex: 0 0 auto;
+    text-align: center;
 }
 
 .top-nav-right {
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex: 1;
+    justify-content: flex-end;
 }
 
 .profile-pic {
@@ -1186,4 +1193,107 @@ button { font-family: var(--font-main); }
 
 .season-pill.active.watched .season-checkbox {
     color: #fff;
+}
+
+/* ============================
+   Profile Dropdown Menu
+   ============================ */
+.profile-dropdown-wrapper {
+    position: relative;
+}
+
+.profile-pic {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profile-pic:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px var(--accent-red);
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 0.75rem;
+    min-width: 160px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 2000;
+}
+
+.profile-dropdown.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: all;
+}
+
+.profile-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-decoration: none;
+    font-family: var(--font-main);
+}
+
+.profile-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.profile-dropdown-item i {
+    font-size: 0.9rem;
+    width: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.profile-dropdown-item.logout-item {
+    border-top: 1px solid #2a2a2a;
+    color: #fca5a5;
+}
+
+.profile-dropdown-item.logout-item i {
+    color: #fca5a5;
+}
+
+/* ============================
+   Discover Card Swap Animations
+   ============================ */
+@keyframes cardFadeOut {
+    0%   { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.85); }
+}
+
+@keyframes cardFadeIn {
+    0%   { opacity: 0; transform: scale(0.85) translateY(8px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.discover-card {
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.discover-card.card-fade-out {
+    animation: cardFadeOut 0.35s ease forwards;
+    pointer-events: none;
+}
+
+.discover-card.card-fade-in {
+    animation: cardFadeIn 0.4s ease forwards;
 }

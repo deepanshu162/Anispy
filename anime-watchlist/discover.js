@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let watchlist = [];
     let currentAnime = null;
 
+    // --- Swap Bench ---
+    // Map of sectionKey -> { extras: [], scrollEl, type }
+    const sectionBench = {};
+
     // Supabase init
     const SUPABASE_URL = 'https://klxbsnywxpchrqavxjcd.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtseGJzbnl3eHBjaHJxYXZ4amNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNzE4NDEsImV4cCI6MjA4OTY0Nzg0MX0.wxmFEKE0FMiUrZluQWnNoxWMAwHTwFDK7kJ83Rtu3mg';
@@ -150,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
             watchlistData.forEach(item => {
                 if (item.genres && Array.isArray(item.genres)) {
                     item.genres.forEach(g => {
-                        // Skip demographics/themes to focus on pure genres
                         if (g.type !== "Demographics" && g.type !== "Themes") {
                             if (!genreCounts[g.name]) genreCounts[g.name] = { id: g.mal_id, count: 0 };
                             genreCounts[g.name].count++;
@@ -163,25 +166,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 .sort((a, b) => b[1].count - a[1].count)
                 .slice(0, 2);
 
-            // 3. Fetch Data concurrently
-            const fetchPromises = [];
-            
-            fetchPromises.push(
-                fetch('/api/recommendations', {
+            // 3. Fetch genre rows sequentially with a delay to respect Jikan rate limits.
+            // Fire the recommendations API call first (it hits our backend, not Jikan).
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            let recResult = null;
+            try {
+                const recRes = await fetch('/api/recommendations', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ anime_ids: recentIds, limit: 12 })
-                }).then(res => res.json()).then(d => ({ title: "TOP MATCHES FOR YOU", type: "mixed", data: d.data }))
-            );
-            
+                    body: JSON.stringify({ anime_ids: recentIds, limit: 20 })
+                });
+                const recData = await recRes.json();
+                recResult = { title: "TOP MATCHES FOR YOU", type: "mixed", data: recData.data };
+            } catch(e) {
+                console.error('Recommendations fetch failed:', e);
+            }
+
+            const genreResults = [];
             for (const [genreName, genreData] of topGenres) {
                 if (genreData.id) {
-                    const url = `https://api.jikan.moe/v4/anime?genres=${genreData.id}&order_by=popularity&sort=asc&limit=15`;
-                    fetchPromises.push(
-                        fetch(url)
-                        .then(res => res.json())
-                        .then(d => {
-                            const filtered = (d.data || [])
+                    // Wait 700ms between each genre's first request to avoid rate limiting
+                    await sleep(700);
+                    try {
+                        let allItems = [];
+                        // Fetch up to 3 pages until we have 20+ unwatched anime
+                        for (let page = 1; page <= 3; page++) {
+                            if (allItems.length >= 20) break;
+                            if (page > 1) await sleep(700); // extra delay for additional pages
+                            const url = `https://api.jikan.moe/v4/anime?genres=${genreData.id}&order_by=popularity&sort=asc&limit=25&page=${page}`;
+                            const res = await fetch(url);
+                            const d = await res.json();
+                            const pageItems = (d.data || [])
                                 .filter(a => !allWatchedMalIds.has(a.mal_id))
                                 .map(a => ({
                                     title: a.title_english || a.title,
@@ -190,18 +206,25 @@ document.addEventListener('DOMContentLoaded', () => {
                                     score: a.score || 'N/A',
                                     mal_id: a.mal_id
                                 }));
-                            return { 
-                                title: `TRENDING IN ${genreName.toUpperCase()}`, 
-                                type: "genre", 
-                                data: filtered.slice(0, 10) 
-                            };
-                        })
-                    );
+                            allItems = allItems.concat(pageItems);
+                            // If Jikan returned fewer than 25 items, no more pages exist
+                            if (!d.data || d.data.length < 25) break;
+                        }
+                        if (allItems.length > 0) {
+                            genreResults.push({
+                                title: `TRENDING IN ${genreName.toUpperCase()}`,
+                                type: "genre",
+                                data: allItems
+                            });
+                        }
+                    } catch(e) {
+                        console.error(`Genre fetch failed for ${genreName}:`, e);
+                    }
                 }
             }
-            
-            const results = await Promise.all(fetchPromises);
-            
+
+            const results = [recResult, ...genreResults].filter(Boolean);
+
             loadingOverlay.style.display = 'none';
             if (discoverRowsContainer) discoverRowsContainer.innerHTML = '';
             
@@ -217,49 +240,108 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Creates a card DOM element for a given anime object
+    function createAnimeCard(anime, type) {
+        const title = anime.title;
+        const image = anime.large_image || anime.image || '';
+        
+        let scoreText = '';
+        if (type === 'mixed') {
+            scoreText = '★ ' + (anime.votes ? anime.votes + ' REC' : 'TOP');
+        } else {
+            scoreText = '★ ' + anime.score;
+        }
+        
+        const card = document.createElement('div');
+        card.className = 'trending-card discover-card';
+        card.dataset.malId = anime.mal_id;
+        card.innerHTML = `
+            <img src="${image}" alt="${title}" class="trending-img">
+            <div class="trending-gradient">
+                <div class="trending-score" style="color: #10B981;"><i class="fa-solid fa-thumbs-up"></i> ${scoreText}</div>
+                <div class="trending-title">${title}</div>
+            </div>
+        `;
+        
+        card.addEventListener('click', () => { openModalFromApi(anime); });
+        return card;
+    }
+
     function renderHorizontalRow(sectionTitle, animeList, type) {
         if (!discoverRowsContainer) return;
+
+        // Split into shown (first 10) and bench (rest)
+        const SHOW_COUNT = 10;
+        const shown = animeList.slice(0, SHOW_COUNT);
+        const bench = animeList.slice(SHOW_COUNT);
+
+        const sectionKey = sectionTitle; // Use title as the map key
         
         const section = document.createElement('section');
         section.className = 'home-section';
-        // Override bottom margin for tighter grouping
         section.style.marginBottom = '0.5rem';
         
         const header = document.createElement('div');
         header.className = 'section-header';
-        header.innerHTML = `<h2 class="section-title italic-title" style="font-size: 1.1rem;">${sectionTitle}</h2>`;
+        
+        header.innerHTML = `
+            <h2 class="section-title italic-title" style="font-size: 1.1rem;">${sectionTitle}</h2>
+            <div class="scroll-controls">
+                <button class="scroll-btn left-scroll"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="scroll-btn right-scroll"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        `;
         
         const scrollContainer = document.createElement('div');
         scrollContainer.className = 'horizontal-scroll hide-scrollbar';
+        scrollContainer.dataset.sectionKey = sectionKey;
         
-        animeList.forEach(anime => {
-            const title = anime.title;
-            const image = anime.large_image || anime.image || '';
-            
-            let scoreText = '';
-            if (type === 'mixed') {
-                scoreText = '★ ' + (anime.votes ? anime.votes + ' REC' : 'TOP');
-            } else {
-                scoreText = '★ ' + anime.score;
-            }
-            
-            const card = document.createElement('div');
-            card.className = 'trending-card';
-            card.innerHTML = `
-                <img src="${image}" alt="${title}" class="trending-img">
-                <div class="trending-gradient">
-                    <div class="trending-score" style="color: #10B981;"><i class="fa-solid fa-thumbs-up"></i> ${scoreText}</div>
-                    <div class="trending-title">${title}</div>
-                </div>
-            `;
-            
-            card.addEventListener('click', () => { openModalFromApi(anime); });
-            scrollContainer.appendChild(card);
+        // Wire up scroll buttons
+        const leftBtn = header.querySelector('.left-scroll');
+        const rightBtn = header.querySelector('.right-scroll');
+        
+        if (leftBtn) leftBtn.addEventListener('click', () => { scrollContainer.scrollBy({ left: -300, behavior: 'smooth' }); });
+        if (rightBtn) rightBtn.addEventListener('click', () => { scrollContainer.scrollBy({ left: 300, behavior: 'smooth' }); });
+        
+        shown.forEach(anime => {
+            scrollContainer.appendChild(createAnimeCard(anime, type));
         });
         
         section.appendChild(header);
         section.appendChild(scrollContainer);
         discoverRowsContainer.appendChild(section);
+
+        // Register section bench
+        sectionBench[sectionKey] = { extras: bench, scrollEl: scrollContainer, type };
+    }
+
+    // Called after a successful save — removes the card with matching malId and swaps in a new one
+    function swapCardOut(malId) {
+        const cards = discoverRowsContainer ? discoverRowsContainer.querySelectorAll(`.discover-card[data-mal-id="${malId}"]`) : [];
+        cards.forEach(card => {
+            const scrollEl = card.closest('[data-section-key]');
+            if (!scrollEl) {
+                card.classList.add('card-fade-out');
+                setTimeout(() => card.remove(), 350);
+                return;
+            }
+            const sectionKey = scrollEl.dataset.sectionKey;
+            const bench = sectionBench[sectionKey];
+
+            card.classList.add('card-fade-out');
+            setTimeout(() => {
+                card.remove();
+                // If we have an extra waiting on the bench, add it
+                if (bench && bench.extras.length > 0) {
+                    const next = bench.extras.shift();
+                    const newCard = createAnimeCard(next, bench.type);
+                    newCard.classList.add('card-fade-in');
+                    scrollEl.appendChild(newCard);
+                    // Remove the animation class after it completes
+                    setTimeout(() => newCard.classList.remove('card-fade-in'), 500);
+                }
+            }, 350);
+        });
     }
 
     function showEmptyState(message) {
@@ -268,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
             discoverEmptyState.innerHTML = `
                 <i class="fa-solid fa-compass" style="font-size: 3rem; opacity: 0.5; margin-bottom: 1rem;"></i>
                 <div>${message}</div>
-                <button onclick="window.location.href='home.html'" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: #f31220; color: white; border: none; border-radius: 2rem; cursor: pointer; font-weight: 600;">Explore Home Page</button>
+                <button onclick="window.location.href='index.html'" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: #f31220; color: white; border: none; border-radius: 2rem; cursor: pointer; font-weight: 600;">Explore Home Page</button>
             `;
             discoverEmptyState.style.display = 'block';
         }
@@ -428,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 charContainer.innerHTML = '<span style="color:#fca5a5; font-size:0.8rem;">Failed to load characters.</span>';
             });
             
-        // Hide seasons for now to avoid duplicating massive logic
+        // Hide seasons for now
         const seasonsContainer = document.getElementById('modalSeasonsContainer');
         if (seasonsContainer) seasonsContainer.classList.add('hidden');
     }
@@ -481,6 +563,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const savedMalId = currentAnime.id;
+
         const existingIndex = watchlist.findIndex(item => item.id === currentAnime.id);
         if (existingIndex >= 0) {
             watchlist[existingIndex].status = status;
@@ -496,6 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 userRating: userRating
             });
             showToast('Added to watchlist');
+            // Swap the card out from the discovery rows
+            swapCardOut(savedMalId);
         }
         
         closeModal();

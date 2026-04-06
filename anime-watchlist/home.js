@@ -258,9 +258,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchNewEpisodes() {
         try {
-            const res = await fetch('https://api.jikan.moe/v4/seasons/now?limit=8');
-            const data = await res.json();
-            renderNewEpisodes(data.data);
+            const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+            const now = new Date();
+            const todayIdx = now.getDay();
+            const yesterdayIdx = (todayIdx + 6) % 7;
+            const todayName   = days[todayIdx];
+            const yesterdayName = days[yesterdayIdx];
+
+            // Fetch today's and yesterday's schedules concurrently (both hit our own server
+            // clock, not Jikan genre endpoints, so rate limits are less of an issue here)
+            const [todayRes, yestRes] = await Promise.all([
+                fetch(`https://api.jikan.moe/v4/schedules?filter=${todayName}&limit=12`),
+                fetch(`https://api.jikan.moe/v4/schedules?filter=${yesterdayName}&limit=8`)
+            ]);
+            const todayData = await todayRes.json();
+            const yestData  = await yestRes.json();
+
+            const combined = [
+                ...(todayData.data || []).map(a => ({ ...a, _airDay: todayName })),
+                ...(yestData.data  || []).map(a => ({ ...a, _airDay: yesterdayName }))
+            ];
+
+            renderNewEpisodes(combined);
         } catch (error) {
             console.error('Error fetching new episodes:', error);
             if(newEpisodesScroll) newEpisodesScroll.innerHTML = '<span style="color:#757575;">Failed to load new episodes.</span>';
@@ -274,19 +293,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = anime.title_english || anime.title;
             const score = anime.score || 'N/A';
             const studio = anime.studios && anime.studios.length > 0 ? anime.studios[0].name : 'Unknown';
-            
-            let broadcastDay = 'This Week';
-            if (anime.broadcast && anime.broadcast.day && anime.broadcast.day !== 'Unknown') {
-                const dayRaw = anime.broadcast.day.split(' ')[0];
-                broadcastDay = dayRaw.endsWith('s') ? dayRaw.slice(0, -1) : dayRaw;
+
+            // Convert JST (UTC+9) to IST (UTC+5:30) by subtracting 3h30m
+            const dayLabel = anime._airDay
+                ? anime._airDay.charAt(0).toUpperCase() + anime._airDay.slice(1, 3)
+                : 'Today';
+            let airInfo = dayLabel;
+            if (anime.broadcast && anime.broadcast.time) {
+                const [jstH, jstM] = anime.broadcast.time.split(':').map(Number);
+                let totalMins = jstH * 60 + jstM - (3 * 60 + 30); // subtract 3h30m
+                if (totalMins < 0) totalMins += 24 * 60;           // handle midnight wrap
+                const istH = String(Math.floor(totalMins / 60)).padStart(2, '0');
+                const istM = String(totalMins % 60).padStart(2, '0');
+                airInfo = `${dayLabel} · ${istH}:${istM} IST`;
             }
-            
+
             const card = document.createElement('div');
             card.className = 'trending-card';
             card.innerHTML = `
                 <img src="${anime.images.jpg.large_image_url}" alt="${title}" class="trending-img">
                 <div class="trending-gradient">
-                    <div class="trending-score" style="color: #6ee7b7;"><i class="fa-solid fa-calendar-day"></i> ${broadcastDay}</div>
+                    <div class="trending-score" style="color: #6ee7b7;"><i class="fa-solid fa-calendar-day"></i> ${airInfo}</div>
                     <div class="trending-title">${title}</div>
                     <div class="trending-meta">${studio} • ★ ${score}</div>
                 </div>
