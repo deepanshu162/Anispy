@@ -41,34 +41,6 @@ else:
 # SMART SEARCH — Helper functions (ported from frontend app.js)
 # ---------------------------------------------------------------------------
 
-def is_related_title(base: str, ext: str) -> bool:
-    """Return True if two anime titles belong to the same franchise/series."""
-    if not base or not ext:
-        return False
-    l_base = base.lower()
-    l_ext = ext.lower()
-
-    if l_ext == l_base:
-        return True
-    if l_ext.startswith(l_base + " ") or l_ext.startswith(l_base + ":") or l_ext.startswith(l_base + "-"):
-        return True
-    if l_base.startswith(l_ext + " ") or l_base.startswith(l_ext + ":") or l_base.startswith(l_ext + "-"):
-        return True
-
-    # Stripped prefix check: handles special chars like "Yu☆Gi☆Oh!" vs "Yu-Gi-Oh!"
-    # Using startswith (not find) to avoid matching short words inside unrelated longer titles
-    # e.g. "fantasy" should NOT match inside "tsukimichimoonlitfantasy"
-    stripped_base = re.sub(r"[^a-z0-9]", "", l_base)
-    stripped_ext = re.sub(r"[^a-z0-9]", "", l_ext)
-
-    if len(stripped_base) >= 4 and stripped_ext.startswith(stripped_base):
-        return True
-    if len(stripped_ext) >= 4 and stripped_base.startswith(stripped_ext):
-        return True
-
-    return False
-
-
 def get_season_label(main_anime: dict, season_anime: dict) -> str:
     """Derive a short human‑readable label for a season relative to the main entry."""
     main_title = main_anime.get("title_english") or main_anime.get("title", "")
@@ -112,52 +84,6 @@ def _build_season_payload(raw: dict) -> dict:
     }
 
 
-def group_results(raw_list: list) -> list:
-    """
-    Group a flat list of Jikan anime objects into franchise groups.
-    Returns a list of dicts: { main, seasons: [{label, ...fields}] }
-    """
-    groups = []
-
-    for raw in raw_list:
-        anime = _build_season_payload(raw)
-        curr_eng = anime.get("title_english") or anime["title"]
-        curr_rom = anime["title"]
-        matched = False
-
-        for g in groups:
-            g_eng = g["main"].get("title_english") or g["main"]["title"]
-            g_rom = g["main"]["title"]
-
-            if is_related_title(g_eng, curr_eng) or is_related_title(g_rom, curr_rom):
-                g["seasons"].append(anime)
-                matched = True
-                break
-
-            if is_related_title(curr_eng, g_eng) or is_related_title(curr_rom, g_rom):
-                g["seasons"].append(anime)
-                g["main"] = anime  # current is more base-like
-                matched = True
-                break
-
-        if not matched:
-            groups.append({"main": anime, "seasons": [anime]})
-
-    # Sort seasons within each group by air date (earliest first)
-    for g in groups:
-        g["seasons"].sort(
-            key=lambda s: s.get("aired_from") or "2099"
-        )
-        g["main"] = g["seasons"][0]  # earliest becomes the main banner
-
-    # Attach human-readable labels to each season
-    for g in groups:
-        for s in g["seasons"]:
-            s["label"] = get_season_label(g["main"], s)
-
-    return groups
-
-
 # ---------------------------------------------------------------------------
 # API ROUTES
 # ---------------------------------------------------------------------------
@@ -192,8 +118,8 @@ async def delete_user(request: DeleteUserRequest):
 @app.get("/api/search")
 async def search_anime(q: str = Query(..., min_length=1), limit: int = 15):
     """
-    Search for anime via Jikan and return pre-grouped results.
-    The frontend no longer needs to call Jikan directly or run grouping logic.
+    Search for anime via Jikan and return them individually wrapped.
+    Grouping is deferred to the detail modal.
     """
     jikan_url = f"https://api.jikan.moe/v4/anime?q={q}&limit={limit}"
     try:
@@ -206,47 +132,72 @@ async def search_anime(q: str = Query(..., min_length=1), limit: int = 15):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Failed to reach Jikan: {e}")
 
-    return {"data": group_results(raw_list)}
+    wrapped = []
+    for raw in raw_list:
+        payload = _build_season_payload(raw)
+        wrapped.append({"main": payload, "seasons": [payload]})
+        
+    return {"data": wrapped}
 
 
 @app.get("/api/anime/{mal_id}/seasons")
 async def get_anime_seasons(mal_id: int):
     """
-    Given a mal_id, find all related seasons and return them grouped.
-    Used by the detail modal to populate season pills.
+    Given a mal_id, traverse its relation tree to find all true seasons/spin-offs.
     """
+    fetched_data = {}
+    queue = [mal_id]
+    visited = set([mal_id])
+    
+    # Target specific franchise-building relations
+    valid_relations = ["Sequel", "Prequel", "Alternative setting", "Alternative version", "Side story", "Parent story", "Spin-off", "Summary", "Full story"]
+
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            # Step 1: Get the title of the requested anime
-            detail_resp = await client.get(f"https://api.jikan.moe/v4/anime/{mal_id}")
-            detail_resp.raise_for_status()
-            detail_data = detail_resp.json().get("data", {})
-            search_title = detail_data.get("title_english") or detail_data.get("title", "")
-
-            # Step 2: Search for related titles using that name
-            search_resp = await client.get(
-                f"https://api.jikan.moe/v4/anime?q={search_title}&limit=15"
-            )
-            search_resp.raise_for_status()
-            raw_list = search_resp.json().get("data", [])
+            # Cap at 10 iterations to respect rate limits and prevent hanging
+            while queue and len(fetched_data) < 10:
+                curr_id = queue.pop(0)
+                
+                resp = await client.get(f"https://api.jikan.moe/v4/anime/{curr_id}/full")
+                resp.raise_for_status()
+                data = resp.json().get("data", {})
+                
+                fetched_data[curr_id] = _build_season_payload(data)
+                
+                relations = data.get("relations", [])
+                for rel in relations:
+                    if rel.get("relation") in valid_relations:
+                        for entry in rel.get("entry", []):
+                            if entry.get("type") == "anime":
+                                rel_id = entry.get("mal_id")
+                                if rel_id and rel_id not in visited:
+                                    visited.add(rel_id)
+                                    queue.append(rel_id)
+                
+                if queue:
+                    await asyncio.sleep(0.35)  # 3 requests per second limit
 
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"Jikan API error: {e}")
+        if len(fetched_data) == 0:
+            raise HTTPException(status_code=e.response.status_code, detail=f"Jikan API error: {e}")
+        # If we failed mid-traversal but have data, we just proceed with what we have
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Failed to reach Jikan: {e}")
+        if len(fetched_data) == 0:
+            raise HTTPException(status_code=502, detail=f"Failed to reach Jikan: {e}")
 
-    groups = group_results(raw_list)
-
-    # Find the group that contains the requested mal_id
-    target_group = next(
-        (g for g in groups if any(s["mal_id"] == mal_id for s in g["seasons"])),
-        None
-    )
-
-    if not target_group or len(target_group["seasons"]) <= 1:
-        return {"data": []}  # No related seasons found
-
-    return {"data": target_group["seasons"]}
+    # Build the final array
+    items = list(fetched_data.values())
+    
+    # Sort chronologically by air date
+    items.sort(key=lambda s: s.get("aired_from") or "2099")
+    
+    # Assign labels based on the earliest main item
+    if items:
+        main_item = items[0]
+        for s in items:
+            s["label"] = get_season_label(main_item, s)
+            
+    return {"data": items}
 
 
 @app.post("/api/recommendations")
